@@ -1,6 +1,8 @@
 from hidden import *
 from tourneytree import *
 
+import random
+
 def _populate_lowest(tt: TourneyTree):
 	num_unused_leaves_left = tt.num_unused_leaves
 	curr_num = 0
@@ -21,6 +23,10 @@ def _populate_row(tt: TourneyTree, row: int):
 
 		if len(children) == 1:
 			tt[pos] = tt[children[0]]
+			continue
+
+		if len(children) == 0:
+			tt[pos] = -1
 			continue
 
 		if len(children) != 2:
@@ -44,7 +50,8 @@ def _remove_node(tt: TourneyTree, pos: Position) -> int:
 		return -1
 
 	if len(children) == 1:
-		new_val = tt[children[0]] if tt[children[0]] != val else -1
+		new_val = _remove_node(tt, children[0])
+
 		tt[pos] = new_val
 		return new_val
 
@@ -63,7 +70,7 @@ def _remove_top(tt: TourneyTree):
 	_remove_node(tt, tt.top())
 
 
-def _run(tt: TourneyTree, k: int):
+def _run(tt: TourneyTree, k: int) -> [int]:
 	_populate_table(tt)
 
 	# print(tt)
@@ -76,25 +83,67 @@ def _run(tt: TourneyTree, k: int):
 
 		# print(tt)
 
-	# print(ksmallest[0], GET(ksmallest[0]))
+	return [GET(i) for i in ksmallest]
 
-	# print(ksmallest)
+# on average 23.5 of the actual k smallest will be in this sample
+def _guess_k_smallest(tt: TourneyTree, k: int) -> [int]:
+	ksmallest_guess = list()
+	for row in range(tt.height - 1, -1, -1):
+		for pos in tt.iter_row(row):
+			if tt[pos] not in ksmallest_guess:
+				ksmallest_guess.append(tt[pos])
 
-	# for i in ksmallest:
-	# 	print(GET(i))
+			if len(ksmallest_guess) == k:
+				return ksmallest_guess
 
-	# print(get_num_comparisons())
+	return ksmallest_guess
 
-	# print(tt._table[12])
-	# for i in tt._table[13]:
-	# 	print(GET(i))
-	# print(len(tt._table[0]))
+# on average 25.5 of the actual k smallest will be in this sample
+def _guess_k_smallest_2(tt: TourneyTree, k: int) -> [int]:
+	# item: (row on, row of partner)
+	row_scores = dict()
+	row_scores[tt[tt.top()]] = (tt.height - 1, tt.height - 1)
+
+	for row in range(tt.height - 2, -1, -1):
+		for pos in tt.iter_row(row):
+			if tt[pos] not in row_scores:
+				row_scores[tt[pos]] = (row, row_scores[tt[tt.get_sibling(pos)]][0])
+
+		if len(row_scores) >= k:
+			return sorted(row_scores, key=row_scores.__getitem__, reverse=True)[:k]
+
+	return sorted(row_scores, key=row_scores.__getitem__, reverse=True)[:k]
+
+# max 25.5 depending on constant
+def _guess_k_smallest_3(tt: TourneyTree, k: int) -> [int]:
+	# item: (row on, row of partner)
+	row_scores = dict()
+	row_scores[tt[tt.top()]] = (tt.height - 1, tt.height - 1)
+
+	sort_by = dict()
+	sort_by[tt[tt.top()]] = 2 * (tt.height - 1)
+
+	for row in range(tt.height - 2, -1, -1):
+		for pos in tt.iter_row(row):
+			if tt[pos] not in row_scores:
+				row_scores[tt[pos]] = (row, row_scores[tt[tt.get_sibling(pos)]][0])
+				# you can weight this 0.001 constant differently
+				# doesn't seem fruitful though
+				sort_by[tt[pos]] = row + 0.001 * row_scores[tt[tt.get_sibling(pos)]][0]
+
+	return sorted(row_scores, key=sort_by.__getitem__, reverse=True)[:k]
+
+def _run_method_2(tt: TourneyTree, k: int) -> [int]:
+	_populate_table(tt)
+	ksmallest_contenders = _guess_k_smallest_2(tt, k)
+
+	ksmallest = ksmallest_contenders
 
 	return [GET(i) for i in ksmallest]
 
-if __name__ == '__main__':
+def _test_accuracy():
 	count_misses = 0
-	total_trials = 10000
+	total_trials = 10000000
 	total_num_comparisons = 0
 
 	tt = TourneyTree(NUM_ELEMENTS)
@@ -104,23 +153,25 @@ if __name__ == '__main__':
 		ksmallest = _run(tt, K)
 		if ksmallest != list(range(K)):
 			count_misses += 1
-			print("MISS!!!")
 
 		total_num_comparisons += get_num_comparisons()
-		print(i)
+		print(f'{i}: {count_misses} {count_misses / (i + 1) * 100} {total_num_comparisons / (i + 1)}')
 
-	print("Miss statistics (total, %):")
-	print(count_misses, (count_misses / total_trials) * 100)
+if __name__ == '__main__':
+	tt = TourneyTree(NUM_ELEMENTS)
 
-	print("Average number of comparisons:")
-	print(total_num_comparisons / total_trials)
-	# _run(NUM_ELEMENTS, K)
-	# tt = TourneyTree(8)
+	total_trials = 10000
+	total_num_hits = 0
+	for i in range(total_trials):
+		reset()
+		ksmallest = _run_method_2(tt, K)
 
-	# print(tt.get_parent(Position(1, 3)))
-	# print(tt[Position(1, 3)])
+		total_num_hits += len([i for i in ksmallest if i < K])
+		print(f'{i}: {total_num_hits / (i + 1)}')
+		# print(ksmallest)
+		# break
 
-	# print(COMPARE(1, 2))
+	# print(ksmallest)
+	# # print(sorted(ksmallest))
 	# print(get_num_comparisons())
-	# print(COMPARE(1, 5))
-	# print(get_num_comparisons())
+	# print(len([i for i in ksmallest if i < K]))

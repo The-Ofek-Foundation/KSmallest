@@ -63,6 +63,13 @@ class TourneyTree(object):
 
 		return children
 
+	def get_sibling(self, pos: Position) -> Position:
+		if pos.row == self.height - 1:
+			return pos
+
+		# 0 <-> 1, 2 <-> 3, 4 <-> 5, etc.
+		return Position(row = pos.row, index = pos.index + 1 - 2 * (pos.index % 2))
+
 	def __str__(self) -> str:
 		s = ""
 
