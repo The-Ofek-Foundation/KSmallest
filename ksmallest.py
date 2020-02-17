@@ -132,24 +132,35 @@ def _guess_k_smallest_3(tt: TourneyTree, k: int) -> [int]:
 
 	return sorted(row_scores, key=sort_by.__getitem__, reverse=True)[:k]
 
-def _create_smart_compare(tt: TourneyTree, elements: [int]) -> SmartCompare:
-	sc = SmartCompare()
-	elements_left = set(elements[1:])
-	for row in range(tt.height - 2, -1, -1):
+def _get_element_positions(tt: TourneyTree, elements: [int]) -> {int: Position}:
+	elements_left = set(elements)
+	positions = dict()
+
+	for row in range(tt.height - 1, -1, -1):
 		for pos in tt.iter_row(row):
 			parent = tt.get_parent(pos)
-
-			if tt[pos] == tt[parent]:
-				continue
 
 			if tt[pos] not in elements_left:
 				continue
 
-			sc.set_greater_than(tt[pos], tt[parent])
+			positions[tt[pos]] = pos
 			elements_left.remove(tt[pos])
 
 			if len(elements_left) == 0:
-				return sc
+				return positions
+
+	return positions
+
+def _create_smart_compare(tt: TourneyTree, elements: [int]) -> SmartCompare:
+	sc = SmartCompare()
+
+	for element, pos in _get_element_positions(tt, elements).items():
+		parent = tt.get_parent(pos)
+
+		if not parent:
+			continue
+
+		sc.set_greater_than(tt[pos], tt[parent])
 
 	return sc
 
