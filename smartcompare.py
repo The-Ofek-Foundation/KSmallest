@@ -116,3 +116,14 @@ def smart_hybrid_merge_sort(elements: [int], sc: SmartCompare, low: int = 0, hig
 	smart_hybrid_merge_sort(elements, sc, low, mid, hybrid_cutoff)
 	smart_hybrid_merge_sort(elements, sc, mid, high, hybrid_cutoff)
 	smart_merge(elements, sc, low, mid, high)
+
+def smart_binary_search(elements: [int], sc: SmartCompare, val: int, low: int, high: int) -> int:
+	while high > low:
+		mid = (high + low) // 2
+
+		if sc.compare(val, elements[mid]):
+			high = mid
+		else:
+			low = mid + 1
+
+	return high
