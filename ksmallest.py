@@ -170,16 +170,18 @@ def _evaluate_contender(tt: TourneyTree, sc: SmartCompare, val: int, contenders:
 
 	for child in tt.iter_same_child(pos):
 		sibling = tt.get_sibling(child)
+		sibling_val = tt[sibling]
 
-		if tt[sibling] in contenders:
+		if sibling_val < 0:
 			continue
 
-		other_val = tt[sibling]
+		if sibling_val in contenders:
+			continue
 
-		sc.set_greater_than(other_val, val)
+		sc.set_greater_than(sibling_val, val)
 
-		contenders.append(other_val)
-		if sc.compare(other_val, contenders[-2]):
+		contenders.append(sibling_val)
+		if sc.compare(sibling_val, contenders[-2]):
 			contenders.sort(key=sc.sort_key())
 		contenders.pop()
 
@@ -203,7 +205,7 @@ def _run_method_2(tt: TourneyTree, k: int) -> [int]:
 
 def _test_accuracy():
 	count_misses = 0
-	total_trials = 100
+	total_trials = 1000
 	total_num_comparisons = 0
 
 	tt = TourneyTree(NUM_ELEMENTS)
@@ -219,7 +221,7 @@ def _test_accuracy():
 
 def _test_second_method():
 	total_num_hits = total_num_comparisons = 0
-	total_trials = 100
+	total_trials = 1000
 
 	tt = TourneyTree(NUM_ELEMENTS)
 
