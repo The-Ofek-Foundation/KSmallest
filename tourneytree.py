@@ -3,7 +3,6 @@ from collections import namedtuple
 
 from hidden import GET
 
-
 Position = namedtuple('Position', ['row', 'index'])
 
 class TourneyTree(object):

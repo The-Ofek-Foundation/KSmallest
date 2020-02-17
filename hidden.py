@@ -8,6 +8,7 @@ random.shuffle(_LIST)
 
 _num_comparisons = 0
 
+# returns true if index1 is less than index2
 def COMPARE(index1: int, index2: int) -> bool:
 	global _num_comparisons
 	_num_comparisons += 1
@@ -22,6 +23,13 @@ def GET(index: int) -> int:
 		return -1
 
 	return _LIST[index]
+
+# used only for debugging / verifying purposes
+def GET_LIST(indices: [int]) -> [int]:
+	return [GET(i) for i in indices]
+
+def PRINT_LIST(indices: [int]):
+	print(GET_LIST(indices))
 
 def reset():
 	global _LIST, _num_comparisons
