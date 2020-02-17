@@ -56,7 +56,8 @@ def _remove_node(tt: TourneyTree, pos: Position) -> int:
 		tt[pos] = new_val
 		return new_val
 
-	same_child, other_child = (children[0], children[1]) if tt[children[0]] == val else (children[1], children[0])
+	same_child = tt.get_same_child(pos)
+	other_child = tt.get_sibling(same_child)
 	other_val = tt[other_child]
 
 	new_same_val = _remove_node(tt, same_child)
@@ -134,7 +135,7 @@ def _guess_k_smallest_3(tt: TourneyTree, k: int) -> [int]:
 
 def _get_element_positions(tt: TourneyTree, elements: [int]) -> {int: Position}:
 	elements_left = set(elements)
-	positions = dict()
+	element_positions = dict()
 
 	for row in range(tt.height - 1, -1, -1):
 		for pos in tt.iter_row(row):
@@ -143,13 +144,13 @@ def _get_element_positions(tt: TourneyTree, elements: [int]) -> {int: Position}:
 			if tt[pos] not in elements_left:
 				continue
 
-			positions[tt[pos]] = pos
+			element_positions[tt[pos]] = pos
 			elements_left.remove(tt[pos])
 
 			if len(elements_left) == 0:
-				return positions
+				return element_positions
 
-	return positions
+	return element_positions
 
 def _create_smart_compare(tt: TourneyTree, elements: [int]) -> SmartCompare:
 	sc = SmartCompare()
@@ -164,11 +165,37 @@ def _create_smart_compare(tt: TourneyTree, elements: [int]) -> SmartCompare:
 
 	return sc
 
+def _evaluate_contender(tt: TourneyTree, sc: SmartCompare, val: int, contenders: [int]):
+	pos = _get_element_positions(tt, [val])[val]
+
+	for child in tt.iter_same_child(pos):
+		sibling = tt.get_sibling(child)
+
+		if tt[sibling] in contenders:
+			continue
+
+		other_val = tt[sibling]
+
+		sc.set_greater_than(other_val, val)
+
+		contenders.append(other_val)
+		if sc.compare(other_val, contenders[-2]):
+			contenders.sort(key=sc.sort_key())
+		contenders.pop()
+
+
+def _evaluate_contenders(tt: TourneyTree, sc: SmartCompare, ksmallest_contenders: [int]):
+	for i in range(len(ksmallest_contenders)):
+		_evaluate_contender(tt, sc, ksmallest_contenders[i], ksmallest_contenders)
+
+
 def _run_method_2(tt: TourneyTree, k: int) -> [int]:
 	_populate_table(tt)
 	ksmallest_contenders = _guess_k_smallest_2(tt, k)
 	sc = _create_smart_compare(tt, ksmallest_contenders)
 	ksmallest_contenders.sort(key=sc.sort_key())
+
+	_evaluate_contenders(tt, sc, ksmallest_contenders)
 
 	ksmallest = ksmallest_contenders
 
@@ -176,7 +203,7 @@ def _run_method_2(tt: TourneyTree, k: int) -> [int]:
 
 def _test_accuracy():
 	count_misses = 0
-	total_trials = 10000000
+	total_trials = 100
 	total_num_comparisons = 0
 
 	tt = TourneyTree(NUM_ELEMENTS)
@@ -191,8 +218,8 @@ def _test_accuracy():
 		print(f'{i}: {count_misses} {count_misses / (i + 1) * 100:.2f} {total_num_comparisons / (i + 1):.3f}')
 
 def _test_second_method():
-	total_num_hits = total_sort_comparisons = 0
-	total_trials = 1000
+	total_num_hits = total_num_comparisons = 0
+	total_trials = 100
 
 	tt = TourneyTree(NUM_ELEMENTS)
 
@@ -201,8 +228,14 @@ def _test_second_method():
 		ksmallest = _run_method_2(tt, K)
 
 		total_num_hits += len([i for i in ksmallest if i < K])
-		total_sort_comparisons += (get_num_comparisons() - (NUM_ELEMENTS - 1))
-		print(f'{i}: {total_num_hits / (i + 1):.3f} {total_sort_comparisons / (i + 1):.3f}')
+		total_num_comparisons += get_num_comparisons()
+		print(f'{i}: {total_num_hits / (i + 1):.3f} {total_num_comparisons / (i + 1):.3f}')
 
 if __name__ == '__main__':
+	# _test_accuracy()
 	_test_second_method()
+
+	# tt = TourneyTree(NUM_ELEMENTS)
+	# ksmallest = _run_method_2(tt, K)
+	# print(ksmallest)
+	# print(get_num_comparisons())

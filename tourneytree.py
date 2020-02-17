@@ -40,6 +40,12 @@ class TourneyTree(object):
 		for index in range(len(self._table[row])):
 			yield Position(row = row, index = index)
 
+	def iter_same_child(self, pos: Position) -> Position:
+		pos = self.get_same_child(pos)
+		while pos:
+			yield pos
+			pos = self.get_same_child(pos)
+
 	def get_parent(self, pos: Position) -> Position:
 		if pos.row >= self.height - 1:
 			return None
@@ -61,6 +67,13 @@ class TourneyTree(object):
 			children.append(right_child)
 
 		return children
+
+	def get_same_child(self, pos: Position) -> Position:
+		for child in self.get_children(pos):
+			if self[child] == self[pos]:
+				return child
+
+		return None
 
 	def get_sibling(self, pos: Position) -> Position:
 		if pos.row == self.height - 1:
